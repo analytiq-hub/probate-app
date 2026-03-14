@@ -44,4 +44,8 @@ if [ -f /workspace/pyproject.toml ]; then
   uv sync --all-packages
 fi
 
+echo "==> Setting default working directory to /workspace..."
+echo 'cd /workspace' >> ~/.bashrc
+echo 'cd /workspace' >> ~/.zshrc
+
 echo "==> postCreate complete."
