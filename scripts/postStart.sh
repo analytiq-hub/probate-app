@@ -3,6 +3,9 @@
 set -euo pipefail
 
 export PATH="$HOME/.local/bin:$PATH"
+export NVM_DIR="/usr/local/share/nvm"
+# shellcheck source=/dev/null
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
 
 echo "==> Waiting for Postgres..."
 until pg_isready -h postgres -U probate -q; do sleep 1; done
