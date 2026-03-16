@@ -2,14 +2,13 @@
 description = "Project setup inside DevPod (env, Python deps, migrations)"
 run = '''
 cd /workspaces/probate-app 2>/dev/null || cd .
-if [ -f .env ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source .env
-  set +a
-else
-  echo ".env not found in repo root; create it or adjust .mise.toml." >&2
+if [ ! -f .env ]; then
+  echo "# Local dev environment overrides (currently empty)" > .env
 fi
+set -a
+# shellcheck disable=SC1091
+. ./.env
+set +a
 if command -v uv >/dev/null 2>&1; then
   if [ -d .venv ] && [ ! -x .venv/bin/python ]; then
     echo "Removing invalid .venv directory..."

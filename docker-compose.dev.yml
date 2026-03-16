@@ -33,6 +33,29 @@ services:
     volumes:
       - minio_data:/data
 
+  api:
+    build:
+      context: ./services/api
+    container_name: probate-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/probate
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET_DOCUMENTS: documents
+      S3_BUCKET_PETITIONS: petitions
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    ports:
+      - "8000:8000"
+
 volumes:
   postgres_data:
   minio_data:
