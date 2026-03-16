@@ -63,7 +63,7 @@ probate-app/
 
 ## DevPod & Local Development Environment
 
-All development happens inside a **DevPod** workspace. The devcontainer provides Node.js, Python (via `uv`), and Docker; sidecar services (postgres, redis, minio) start automatically via docker-compose.
+All development happens inside a **DevPod** workspace. The devcontainer provides Node.js, Python (via `uv`), and Docker; we run Docker **inside** the devpod, and sidecar services (postgres, redis, minio) start automatically via docker-compose within the devpod environment.
 
 ### Files
 
