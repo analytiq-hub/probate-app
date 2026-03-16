@@ -3,7 +3,14 @@
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
     }
   },
-  "postCreateCommand": "./scripts/postCreate.sh && docker compose -f docker-compose.dev.yml up -d"
+  "postCreateCommand": "bash scripts/postCreate.sh && docker compose -f docker-compose.dev.yml up -d"
 }
+

@@ -11,41 +11,73 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # shellcheck source=/dev/null
 source "$HOME/.local/bin/env" 2>/dev/null || export PATH="$HOME/.local/bin:$PATH"
 
-# The devcontainer Node feature installs via nvm; source it so npm is on PATH
+echo "==> Checking for Node/npm..."
+
+# Try to source an existing system-wide nvm (if any)
 export NVM_DIR="/usr/local/share/nvm"
 # shellcheck source=/dev/null
-[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh" || true
 
-echo "==> Updating npm to latest..."
-npm install -g npm@latest
+# If node is still missing, install our own nvm + Node 22
+if ! command -v node >/dev/null 2>&1; then
+  echo "    node not found; installing nvm + Node 22..."
+  export NVM_DIR="$HOME/.nvm"
+  mkdir -p "$NVM_DIR"
+  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+  # shellcheck source=/dev/null
+  source "$NVM_DIR/nvm.sh"
+  nvm install 22
+  nvm use 22
+fi
 
-echo "==> Installing pnpm..."
-npm install -g pnpm
+if command -v npm >/dev/null 2>&1; then
+  echo "==> npm detected, updating to latest..."
+  npm install -g npm@latest
+
+  echo "==> Installing pnpm..."
+  npm install -g pnpm
+else
+  echo "    npm still not found on PATH; skipping Node/pnpm bootstrap."
+fi
 
 echo "==> Installing MinIO client (mc)..."
 mkdir -p "$HOME/.local/bin"
 curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o "$HOME/.local/bin/mc"
 chmod +x "$HOME/.local/bin/mc"
 
-echo "==> Installing concurrently..."
-npm install -g concurrently
+if command -v npm >/dev/null 2>&1; then
+  echo "==> Installing concurrently..."
+  npm install -g concurrently
+else
+  echo "    npm not found; skipping global concurrently install."
+fi
 
 echo "==> Installing Node dependencies..."
-cd /workspace
-if [ -f package.json ]; then
-  pnpm install
+# Prefer current working directory (where devcontainer runs postCreate from),
+# but fall back to common workspace paths if needed.
+if [ -d "/workspaces/probate-app" ]; then
+  cd /workspaces/probate-app
+fi
+
+if command -v pnpm >/dev/null 2>&1; then
+  if [ -f package.json ]; then
+    pnpm install
+  else
+    echo "    No package.json yet — skipping (will run once monorepo is scaffolded)"
+  fi
 else
-  echo "    No package.json yet — skipping (will run once monorepo is scaffolded)"
+  echo "    pnpm not found; skipping Node dependency install."
 fi
 
 echo "==> Syncing Python dependencies..."
 # Python services will be synced once scaffolded; no-op until services/ exists
-if [ -f /workspace/pyproject.toml ]; then
+if [ -f /workspaces/probate-app/pyproject.toml ]; then
+  cd /workspaces/probate-app
   uv sync --all-packages
 fi
 
-echo "==> Setting default working directory to /workspace..."
-echo 'cd /workspace' >> ~/.bashrc
-echo 'cd /workspace' >> ~/.zshrc
+echo "==> Setting default working directory to /workspaces/probate-app..."
+echo 'cd /workspaces/probate-app' >> ~/.bashrc
+echo 'cd /workspaces/probate-app' >> ~/.zshrc
 
 echo "==> postCreate complete."
