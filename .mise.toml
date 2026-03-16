@@ -1,0 +1,39 @@
+[tasks.setup]
+description = "Project setup inside DevPod (env, Python deps, migrations)"
+run = '''
+cd /workspaces/probate-app 2>/dev/null || cd .
+if [ -f .env ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
+else
+  echo ".env not found in repo root; create it or adjust .mise.toml." >&2
+fi
+if command -v uv >/dev/null 2>&1; then
+  if [ -d .venv ] && [ ! -x .venv/bin/python ]; then
+    echo "Removing invalid .venv directory..."
+    rm -rf .venv
+  fi
+  uv sync --all-packages || echo "uv sync failed (ok during initial scaffolding)"
+fi
+if [ -d services/api ]; then
+  cd services/api
+  if command -v alembic >/dev/null 2>&1; then
+    alembic upgrade head || echo "alembic upgrade failed (ok if DB not ready yet)"
+  fi
+fi
+'''
+
+[tasks.up]
+description = "Start local infra (postgres, redis, minio) with docker-compose.dev.yml in foreground"
+run = "docker compose -f docker-compose.dev.yml up"
+
+[tasks.down]
+description = "Stop local infra (docker-compose.dev.yml)"
+run = "docker compose -f docker-compose.dev.yml down"
+
+[tasks.upgrade]
+description = "Run database migrations for API service (alembic upgrade head)"
+run = "cd services/api && alembic upgrade head"
+
