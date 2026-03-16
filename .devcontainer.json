@@ -1,1 +1,9 @@
-{"image":"mcr.microsoft.com/devcontainers/base:ubuntu"}
+{
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
+    }
+  },
+  "postCreateCommand": "./scripts/postCreate.sh && docker compose -f docker-compose.dev.yml up -d"
+}

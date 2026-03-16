@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: probate-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: probate
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: probate-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  celery-worker:
+    image: probate-celery-worker
+    container_name: probate-celery-worker
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/probate
+    # Replace this with your real worker command/image build once available
+    command: ["sh", "-c", "echo 'Celery worker container placeholder – update image/command' && sleep infinity"]
+
+volumes:
+  postgres_data:
+
