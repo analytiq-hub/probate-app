@@ -45,6 +45,18 @@ mkdir -p "$HOME/.local/bin"
 curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o "$HOME/.local/bin/mc"
 chmod +x "$HOME/.local/bin/mc"
 
+echo "==> Installing mise (tool version manager)..."
+curl https://mise.run | sh
+# Ensure mise is on PATH for future shells
+if ! grep -q 'eval "\$(~/.local/bin/mise activate bash)"' "$HOME/.bashrc" 2>/dev/null; then
+  {
+    echo ''
+    echo '# mise init'
+    echo 'export PATH="$HOME/.local/bin:$PATH"'
+    echo 'eval "$(~/.local/bin/mise activate bash)"'
+  } >> "$HOME/.bashrc"
+fi
+
 if command -v npm >/dev/null 2>&1; then
   echo "==> Installing concurrently..."
   npm install -g concurrently

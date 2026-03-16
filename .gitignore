@@ -29,6 +29,10 @@ __pycache__/
 venv/
 env/
 
+# uv
+.uv/
+.python_packages/
+
 # Env / secrets
 .env
 .env.*

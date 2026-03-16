@@ -15,7 +15,7 @@ Building a probate petition automation platform. The applicant-facing app is **R
 - Storage: S3-compatible (`boto3`)
 - Auth: **FastAPI JWT** (python-jose); mobile app stores JWT in `expo-secure-store`; admin web uses NextAuth.js calling `/auth/token`
 - Shared types: FastAPI auto-generates **OpenAPI spec**; `openapi-typescript` generates TS types for both frontend apps
-- Dev environment: DevPod with Docker Compose (postgres, redis, minio run as sidecars inside devcontainer)
+- Dev environment: DevPod workspace running Docker Compose (postgres, redis, minio run as sidecars inside the DevPod)
 - MVP focus: Applicant mobile app first
 
 ---
@@ -46,9 +46,6 @@ probate-app/
     architecture.md
     implementation-plan.md
     openapi.json          # Generated FastAPI OpenAPI spec (committed, used for type-gen)
-  .devcontainer/
-    devcontainer.json
-    docker-compose.yml
   scripts/
     devpod-setup.sh
     start.sh
@@ -63,64 +60,9 @@ probate-app/
 
 ## DevPod & Local Development Environment
 
-All development happens inside a **DevPod** workspace. The devcontainer provides Node.js, Python (via `uv`), and Docker; we run Docker **inside** the devpod, and sidecar services (postgres, redis, minio) start automatically via docker-compose within the devpod environment.
+All development happens inside a **DevPod** workspace. The DevPod image includes Node.js, Python (via `uv`), and Docker; we run `docker compose` **inside** the DevPod using `docker-compose.dev.yml` in this repo. Sidecar services (postgres, redis, minio) start automatically via that compose file inside the DevPod — there is no nested devcontainer.
 
-### Files
-
-**`.devcontainer/devcontainer.json`**
-```json
-{
-  "name": "probate-app",
-  "dockerComposeFile": "docker-compose.yml",
-  "service": "devcontainer",
-  "workspaceFolder": "/workspace",
-  "forwardPorts": [3002, 8000, 8081, 19000, 19001, 5432, 6379, 9000, 9001],
-  "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
-    "ghcr.io/devcontainers/features/python:1": { "version": "3.12" }
-  },
-  "postCreateCommand": "corepack enable && pnpm install && uv sync --all-packages",
-  "postStartCommand": "uv run alembic upgrade head && uv run python -m scripts.seed"
-}
-```
-
-**`.devcontainer/docker-compose.yml`**
-```yaml
-services:
-  devcontainer:
-    image: mcr.microsoft.com/devcontainers/base:ubuntu
-    volumes: ["../:/workspace:cached"]
-    command: sleep infinity
-    depends_on: [postgres, redis, minio]
-    environment:
-      DATABASE_URL: postgresql+asyncpg://probate:probate@postgres:5432/probate
-      REDIS_URL: redis://redis:6379/0
-      S3_ENDPOINT_URL: http://minio:9000
-      S3_REGION: us-east-1
-      S3_BUCKET_DOCUMENTS: documents
-      S3_BUCKET_PETITIONS: petitions
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
-
-  postgres:
-    image: postgres:16-alpine
-    environment: { POSTGRES_USER: probate, POSTGRES_PASSWORD: probate, POSTGRES_DB: probate }
-    volumes: ["postgres-data:/var/lib/postgresql/data"]
-
-  redis:
-    image: redis:7-alpine
-    volumes: ["redis-data:/data"]
-
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    environment: { MINIO_ROOT_USER: minioadmin, MINIO_ROOT_PASSWORD: minioadmin }
-    volumes: ["minio-data:/data"]
-
-volumes: { postgres-data: {}, redis-data: {}, minio-data: {} }
-```
-
-### Scripts (run inside the devpod)
+### Scripts (run inside the DevPod)
 
 **`scripts/devpod-setup.sh`** — provision the workspace (run once on host)
 ```bash
@@ -290,7 +232,7 @@ LOG_LEVEL                 # debug|info|warning|error
 - **`python-jose`** for JWT, **`passlib[bcrypt]`** for password hashing
 
 ### Tasks
-1. Write `.devcontainer/devcontainer.json` and `.devcontainer/docker-compose.yml` (see DevPod section)
+1. Write `docker-compose.dev.yml` for postgres, redis, minio sidecars (used from inside the DevPod)
 2. Write `scripts/devpod-setup.sh`, `start.sh`, `stop.sh`, `reset-db.sh`, `generate-types.sh`
 3. Init pnpm workspace with `pnpm-workspace.yaml` listing `apps/*` and `packages/*`; add `turbo.json` for frontend apps only
 4. Add root `tsconfig.base.json` (strict, `moduleResolution: bundler`)
@@ -311,7 +253,7 @@ LOG_LEVEL                 # debug|info|warning|error
 16. Add `packages/shared-types/` as a placeholder; `generate-types.sh` will populate it from the OpenAPI spec
 
 ### Key Files
-- `.devcontainer/devcontainer.json`, `.devcontainer/docker-compose.yml`
+- `docker-compose.dev.yml`
 - `scripts/` — all four scripts
 - `services/api/app/models/*.py`
 - `services/api/app/core/config.py`, `database.py`, `auth.py`, `storage.py`
