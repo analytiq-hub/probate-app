@@ -56,6 +56,47 @@ services:
     ports:
       - "8000:8000"
 
+  admin-web:
+    image: node:22
+    container_name: probate-admin-web
+    working_dir: /workspace
+    restart: unless-stopped
+    command: >
+      sh -lc "corepack enable &&
+              pnpm install &&
+              pnpm dev --filter admin-web -- --port 3002 --hostname 0.0.0.0"
+    env_file:
+      - .env
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8000
+    depends_on:
+      - api
+    volumes:
+      - ./:/workspace
+    ports:
+      - "3002:3002"
+
+  applicant-mobile:
+    image: node:22
+    container_name: probate-applicant-mobile
+    working_dir: /workspace
+    restart: unless-stopped
+    command: >
+      sh -lc "corepack enable &&
+              pnpm install &&
+              pnpm --filter applicant-mobile dev -- --localhost"
+    env_file:
+      - .env
+    environment:
+      EXPO_PUBLIC_API_URL: http://api:8000
+      EXPO_NO_INTERACTIVE: "1"
+    depends_on:
+      - api
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8081:8081"
+
 volumes:
   postgres_data:
   minio_data:
