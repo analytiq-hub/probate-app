@@ -3,7 +3,6 @@
 set -euo pipefail
 
 export PATH="$HOME/.local/bin:$PATH"
-cd /workspace
 
 echo "==> Ensuring MinIO buckets exist..."
 mc alias set local http://minio:9000 minioadmin minioadmin --quiet 2>/dev/null || true
